@@ -66,7 +66,26 @@ func GetLocalAuth() (*LocalAuth, error) {
 	return &auth, nil
 }
 
-func GetIP() (string, error) {
+func SaveLocalAuth(name, surname, email, authToken string) error {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	path := homeDir + "/.portsuite/authentication.json"
+	localAuth := &LocalAuth{
+		Name:      name,
+		Surname:   surname,
+		Email:     email,
+		AuthToken: authToken,
+	}
+	fileBytes, err := json.Marshal(localAuth)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, fileBytes, 0644)
+}
+
+func GetCofigIP() (string, error) {
 	conf, err := GetConfiguration()
 	if err != nil {
 		return "", err
