@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/fatih/color"
 )
@@ -20,7 +21,10 @@ type SignOutCommand struct{}
 
 type RegisterCommand struct{}
 
-type ListCommand struct{}
+type ListCommand struct {
+	Recursive bool
+	Path      string
+}
 
 var (
 	red      = color.RGB(255, 0, 0)
@@ -47,7 +51,33 @@ func GetCommand(args []string) Command {
 	case "register":
 		return &RegisterCommand{}
 	case "list":
-		return &ListCommand{}
+		if len(args) > 3 {
+			fmt.Println("fileport: Invalid argument")
+			return nil
+		}
+		rec := false
+		path := "."
+		recAlternatives := []string{"-r", "--recursive"}
+		switch len(args) {
+		case 2:
+			if slices.Contains(recAlternatives, args[1]) {
+				rec = true
+			} else {
+				path = args[1]
+			}
+		case 3:
+			if slices.Contains(recAlternatives, args[2]) {
+				rec = true
+				path = args[1]
+			} else {
+				fmt.Printf("Usage: fileport %s [path] [-r --recursive]", args[0])
+				return nil
+			}
+		}
+		return &ListCommand{
+			Recursive: rec,
+			Path:      path,
+		}
 	default:
 		fmt.Println("fileport: Invalid argument")
 		return nil

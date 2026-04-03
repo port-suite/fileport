@@ -211,11 +211,11 @@ func (c *RegisterCommand) Execute() {
 }
 
 func (c *ListCommand) Execute() {
-	dir, err := net.GetFilesList(".")
+	dir, err := net.GetFilesList(c.Path, c.Recursive)
 	if err != nil {
 		red.Println("Something went wrong")
 		fmt.Println(err)
 		return
 	}
-	dir.Print("", true)
+	dir.Print()
 }

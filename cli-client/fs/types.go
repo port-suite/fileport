@@ -2,13 +2,12 @@ package fs
 
 import (
 	"fmt"
-	"os"
-	"strings"
 )
 
 type Inode interface {
 	Type() InodeType
-	Print(string, bool)
+	print(string, bool)
+	Print()
 }
 
 type InodeType int
@@ -27,7 +26,11 @@ func (d *DirectoryInode) Type() InodeType {
 	return Directory
 }
 
-func (d *DirectoryInode) Print(indent string, lastINode bool) {
+func (d *DirectoryInode) Print() {
+	d.print("", true)
+}
+
+func (d *DirectoryInode) print(indent string, lastINode bool) {
 	fmt.Printf("%s+- %s (directory) \n", indent, d.Name)
 
 	if lastINode {
@@ -37,7 +40,7 @@ func (d *DirectoryInode) Print(indent string, lastINode bool) {
 	}
 
 	for i, node := range d.Nodes {
-		node.Print(indent, i == len(d.Nodes)-1)
+		node.print(indent, i == len(d.Nodes)-1)
 	}
 }
 
@@ -49,7 +52,11 @@ func (f *FileInode) Type() InodeType {
 	return File
 }
 
-func (f *FileInode) Print(indent string, lastINode bool) {
+func (f *FileInode) Print() {
+	f.print("", true)
+}
+
+func (f *FileInode) print(indent string, lastINode bool) {
 	fmt.Printf("%s+- %s\n", indent, f.Name)
 }
 
@@ -68,55 +75,83 @@ func (d *DirectoryInode) AddINode(node Inode) {
 	d.Nodes = append(d.Nodes, node)
 }
 
-func GetDirectoryContent(email string) (*DirectoryInode, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
+func isString(v any) bool {
+	switch v.(type) {
+	case string:
+		return true
+	default:
+		return false
 	}
-	path := fmt.Sprintf("%s/.fileport/users/%s", homeDir, email)
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return nil, err
-	}
-	rootContent := []Inode{}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			rootContent = append(rootContent, NewDirectoryInode(entry.Name(), []Inode{}))
-		} else {
-			rootContent = append(rootContent, NewFileINode(entry.Name()))
-		}
-	}
-	if strings.Split(email, "/")[1] == "." && len(strings.Split(email, "/")) == 2 {
-		email = strings.Split(email, "/")[0]
-	}
-	dir := NewDirectoryInode(email, rootContent)
-	return dir, nil
 }
 
-func GetDirectoryContentR(email string) (*DirectoryInode, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
+func MapToDirectoryInode(m map[string]any) *DirectoryInode {
+	dirName, exists := m["dir_name"]
+	if !exists {
+		return nil
 	}
-	path := fmt.Sprintf("%s/.fileport/users/%s", homeDir, email)
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return nil, err
+	if !isString(dirName) {
+		return nil
 	}
-	rootContent := []Inode{}
-	for _, entry := range entries {
-		if entry.IsDir() {
-
-			newDir, err := GetDirectoryContentR(fmt.Sprintf("%s/%s", email, entry.Name()))
-			if err != nil {
-				return nil, err
+	dir := NewDirectoryInode(dirName.(string), make([]Inode, 0))
+	dirNodes, exists := m["dir_nodes"]
+	if !exists {
+		return nil
+	}
+	dirContent := []Inode{}
+	for _, node := range dirNodes.([]any) {
+		dir, isDir := node.(map[string]any)["dir_name"]
+		if isDir {
+			if !isString(dir) {
+				return nil
 			}
-			rootContent = append(rootContent, newDir)
-		} else {
-			rootContent = append(rootContent, NewFileINode(entry.Name()))
+			dirContent = append(dirContent, &DirectoryInode{Name: dir.(string)})
+			continue
+		}
+		file, isFile := node.(map[string]any)["file_name"]
+		if isFile {
+			if !isString(file) {
+				return nil
+			}
+			dirContent = append(dirContent, &FileInode{Name: file.(string)})
 		}
 	}
-	dirName := strings.Split(email, "/")[len(strings.Split(email, "/"))-1]
-	dir := NewDirectoryInode((map[bool]string{true: strings.Split(email, "/")[0], false: dirName})[dirName == "."], rootContent)
-	return dir, nil
+	dir.Nodes = dirContent
+
+	return dir
+}
+
+func MapToDirectoryInodeR(m map[string]any) *DirectoryInode {
+	dirName, exists := m["dir_name"]
+	if !exists {
+		return nil
+	}
+	if !isString(dirName) {
+		return nil
+	}
+	dir := NewDirectoryInode(dirName.(string), make([]Inode, 0))
+	dirNodes, exists := m["dir_nodes"]
+	if !exists {
+		return nil
+	}
+	dirContent := []Inode{}
+	for _, node := range dirNodes.([]any) {
+		dir, isDir := node.(map[string]any)["dir_name"]
+		if isDir {
+			if !isString(dir) {
+				return nil
+			}
+			dirContent = append(dirContent, MapToDirectoryInodeR(node.(map[string]any)))
+			continue
+		}
+		file, isFile := node.(map[string]any)["file_name"]
+		if isFile {
+			if !isString(file) {
+				return nil
+			}
+			dirContent = append(dirContent, &FileInode{Name: file.(string)})
+		}
+	}
+	dir.Nodes = dirContent
+
+	return dir
 }
