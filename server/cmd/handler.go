@@ -47,3 +47,15 @@ func listDirectoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	WriteJSON(w, dir)
 }
+
+func getFileHandler(w http.ResponseWriter, r *http.Request) {
+	email, err := verifyToken(r)
+	if err != nil {
+		slog.Error("invalid token error", "error", err)
+		Unauthorized(w)
+		return
+	}
+	fmt.Println(email)
+	fmt.Println(r.URL.Query())
+	WriteJSON(w, "Hello")
+}
