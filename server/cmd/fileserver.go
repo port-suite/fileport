@@ -11,10 +11,8 @@ import (
 )
 
 type FileServer struct {
-	Path     string
-	port     int
-	namech   chan string
-	FileName string
+	Path string
+	port int
 }
 
 type ConnMode int

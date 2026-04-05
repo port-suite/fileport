@@ -234,6 +234,18 @@ func (c *GetCommand) Execute() {
 		red.Println("Something went wrong")
 		return
 	}
+
+	switch response.ResponseCode {
+	case 401:
+		red.Println("Must be signed in")
+		return
+	case 404:
+		yellow.Printf("File '%s' does not exist\n", c.Path)
+		return
+	case 400:
+		red.Println("Something went wrong")
+		return
+	}
 	conn, err := net.Dial("tcp", fmt.Sprintf(":%d", response.PortNumber))
 	buff := new(bytes.Buffer)
 	var (
@@ -249,6 +261,7 @@ func (c *GetCommand) Execute() {
 	// Assumption: fs.Path includes the users email address
 	if err = os.WriteFile(response.FileName, buff.Bytes(), 0766); err != nil {
 		red.Printf("Could not save file '%s'. Try again later!\n", response.FileName)
+		return
 	}
 	green.Printf("Downloaded 1 file from fileport: %s\n", c.Path)
 }

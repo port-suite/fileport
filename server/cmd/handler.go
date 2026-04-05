@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"math/rand"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -70,7 +71,16 @@ func getFileHandler(w http.ResponseWriter, r *http.Request) {
 		NotFound(w)
 		return
 	}
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
 	path = fmt.Sprintf("%s/%s", email, path)
+	if _, err = os.Stat(fmt.Sprintf("%s/.fileport/users/%s", homeDir, path)); os.IsNotExist(err) {
+		NotFound(w)
+		return
+	}
 	portNum := 8000 + rand.Intn(1000-100) + 100
 	response := &GetFileResponse{
 		ResponseCode: 200,
