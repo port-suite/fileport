@@ -257,11 +257,64 @@ func (c *GetCommand) Execute() {
 		red.Println("Something went wrong")
 		return
 	}
-	// TODO: Save file in file system on target location
-	// Assumption: fs.Path includes the users email address
 	if err = os.WriteFile(response.FileName, buff.Bytes(), 0766); err != nil {
 		red.Printf("Could not save file '%s'. Try again later!\n", response.FileName)
 		return
 	}
 	green.Printf("Downloaded 1 file from fileport: %s\n", c.Path)
+}
+
+func (c *UploadCommand) Execute() {
+	curDir, err := os.Getwd()
+	if err != nil {
+		red.Println("Something went wrong")
+		return
+	}
+	filePath := fmt.Sprintf("%s/%s", curDir, c.FileName)
+	fileStats, err := os.Stat(filePath)
+	if os.IsNotExist(err) {
+		yellow.Printf("File: '%s'. No such file\n", c.FileName)
+		return
+	}
+	var fileName string
+	if strings.Contains(c.FileName, "/") {
+		fileName = strings.Split(c.FileName, "/")[len(strings.Split(c.FileName, "/"))-1]
+	} else {
+		fileName = c.FileName
+	}
+	response, err := fpNet.UploadFile(fileName, c.DestinationPath)
+	if err != nil {
+		fmt.Println("sending file")
+		red.Println("Something went wrong")
+		return
+	}
+	switch response.ResponseCode {
+	case 400:
+		red.Println("Something went wrong")
+		return
+	case 401:
+		red.Println("Must be signed in")
+		return
+	case 500:
+		red.Println("Something went wrong")
+		return
+	}
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		red.Println("Something went wrong")
+		return
+	}
+	conn, err := net.Dial("tcp", fmt.Sprintf(":%d", response.PortNumber))
+	if err != nil {
+		red.Println("Could not connect to file server")
+		return
+	}
+	binary.Write(conn, binary.LittleEndian, fileStats.Size())
+	_, err = io.CopyN(conn, file, fileStats.Size())
+	if err != nil {
+		red.Printf("Could not upload file '%s'. Please try again later!\n", fileName)
+		return
+	}
+	green.Printf("Uploaded 1 file to fileport: %s\n", fileName)
 }

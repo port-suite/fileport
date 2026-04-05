@@ -73,3 +73,13 @@ func GetOutboundIP() string {
 	ip := conn.LocalAddr().(*net.UDPAddr)
 	return ip.IP.String()
 }
+
+type UploadFileRequest struct {
+	FileName    string `json:"file_name"`
+	Destination string `json:"destination"`
+}
+
+type UploadFileResponse struct {
+	ResponseCode int `json:"response_code`
+	PortNumber   int `json:"port_number"`
+}

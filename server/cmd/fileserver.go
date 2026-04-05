@@ -12,8 +12,9 @@ import (
 )
 
 type FileServer struct {
-	Path string
-	Port int
+	Path  string
+	Port  int
+	msgch chan string
 }
 
 type ConnMode int
@@ -25,8 +26,9 @@ const (
 
 func NewFileServer(filePath string, port int) *FileServer {
 	return &FileServer{
-		Path: filePath,
-		Port: port,
+		Path:  filePath,
+		Port:  port,
+		msgch: make(chan string, 2),
 	}
 }
 
@@ -84,6 +86,23 @@ func (fs *FileServer) retrieveFile(conn net.Conn) error {
 	if err = os.MkdirAll(extractDirectory(fs.Path), 0755); err != nil {
 		slog.Error("could not mkdir", "error", err)
 		return err
+	}
+	stat, err := os.Stat(fs.Path)
+	if err != nil {
+		slog.Error("could not get file stats", "error", err)
+		return err
+	}
+	if stat.IsDir() {
+		if fs.Path[len(fs.Path)-1] != '/' {
+			fs.Path = fs.Path + "/"
+		}
+		select {
+		case name := <-fs.msgch:
+			fs.Path = fs.Path + name
+		}
+		// fs.Path = fs.Path + name
+		// d1, d2, d3 := rand.Intn(10), rand.Intn(10), rand.Intn(10)
+		// fs.Path = fmt.Sprintf("%supload_%d%d%d.file", fs.Path, d1, d2, d3)
 	}
 	if err = os.WriteFile(fs.Path, buff.Bytes(), 0755); err != nil {
 		slog.Error("could not write file", "error", err)

@@ -74,3 +74,39 @@ func GetFile(path string) (*GetFileResponse, error) {
 	}
 	return &getFileRes, nil
 }
+
+func UploadFile(fileName, destPath string) (*UploadFileResponse, error) {
+	ip, err := fs.GetCofigIP()
+	if err != nil {
+		return nil, err
+	}
+	reqBody, err := json.Marshal(&UploadFileRequest{
+		FileName:    fileName,
+		Destination: destPath,
+	})
+	request, err := http.NewRequest("POST", fmt.Sprintf("http://%s:8001/files/upload", ip), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return nil, err
+	}
+	auth, err := fs.GetLocalAuth()
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth.AuthToken))
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	if response.StatusCode != 200 {
+		return &UploadFileResponse{
+			ResponseCode: response.StatusCode,
+			PortNumber:   -1,
+		}, nil
+	}
+	var uploadFileRes UploadFileResponse
+	if err = json.NewDecoder(response.Body).Decode(&uploadFileRes); err != nil {
+		return nil, err
+	}
+	return &uploadFileRes, nil
+}

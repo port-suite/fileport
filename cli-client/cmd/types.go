@@ -30,6 +30,11 @@ type GetCommand struct {
 	Path string
 }
 
+type UploadCommand struct {
+	FileName        string
+	DestinationPath string
+}
+
 var (
 	red      = color.RGB(255, 0, 0)
 	green    = color.RGB(0, 255, 0)
@@ -84,11 +89,20 @@ func GenerateCommand(args []string) Command {
 		}
 	case "get":
 		if len(args) != 2 {
-			yellow.Printf("Usage: fileport %s <file-name>\n", args[0])
+			fmt.Printf("Usage: fileport %s <file-name>\n", args[0])
 			return nil
 		}
 		return &GetCommand{
 			Path: args[1],
+		}
+	case "upload":
+		if len(args) != 3 {
+			fmt.Printf("Usage: fileport %s <file> <destination-path>\n", args[0])
+			return nil
+		}
+		return &UploadCommand{
+			FileName:        args[1],
+			DestinationPath: args[2],
 		}
 	default:
 		fmt.Println("fileport: Invalid argument")

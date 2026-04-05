@@ -124,6 +124,9 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 		ResponseCode: 200,
 		PortNumber:   portNum,
 	}
+	msgch := make(chan string, 2)
+	fs.msgch = msgch
 	go fs.Start(MODE_READ)
+	msgch <- req.FileName
 	WriteJSON(w, response)
 }
