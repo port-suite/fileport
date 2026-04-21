@@ -62,3 +62,7 @@ type UploadFileRequest struct {
 	FileName    string `json:"file_name"`
 	Destination string `json:"destination"`
 }
+
+type MkdirRequest struct {
+	DirName string `json:"dir_name"`
+}

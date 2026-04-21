@@ -318,3 +318,7 @@ func (c *UploadCommand) Execute() {
 	}
 	green.Printf("Uploaded 1 file to fileport: %s\n", fileName)
 }
+
+func (c *MkdirCommand) Execute() {
+
+}

@@ -80,6 +80,10 @@ type UploadFileRequest struct {
 }
 
 type UploadFileResponse struct {
-	ResponseCode int `json:"response_code`
+	ResponseCode int `json:"response_code"`
 	PortNumber   int `json:"port_number"`
+}
+
+type MkdirRequest struct {
+	DirName string `json:"dir_name"`
 }

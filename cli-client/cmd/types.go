@@ -35,6 +35,10 @@ type UploadCommand struct {
 	DestinationPath string
 }
 
+type MkdirCommand struct {
+	DirName string
+}
+
 var (
 	red      = color.RGB(255, 0, 0)
 	green    = color.RGB(0, 255, 0)
@@ -103,6 +107,14 @@ func GenerateCommand(args []string) Command {
 		return &UploadCommand{
 			FileName:        args[1],
 			DestinationPath: args[2],
+		}
+	case "mkdir":
+		if len(args) != 2 {
+			fmt.Printf("Usage: fileport %s <directory-name>\n", args[0])
+			return nil
+		}
+		return &MkdirCommand{
+			DirName: args[1],
 		}
 	default:
 		fmt.Println("fileport: Invalid argument")

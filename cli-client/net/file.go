@@ -110,3 +110,7 @@ func UploadFile(fileName, destPath string) (*UploadFileResponse, error) {
 	}
 	return &uploadFileRes, nil
 }
+
+func Mkdir(dirName string) error {
+	return nil
+}

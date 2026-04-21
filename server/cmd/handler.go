@@ -106,7 +106,7 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	var req UploadFileRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.Info("coult not decode request body")
+		slog.Info("could not decode request body")
 		BadRequest(w)
 		return
 	}
@@ -129,6 +129,7 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func mkdirHandler(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("did we even get here?")
 	if !ensureJSON(w, r) {
 		slog.Info("bad requsest. Content-Type!=application/json")
 		return
@@ -139,7 +140,31 @@ func mkdirHandler(w http.ResponseWriter, r *http.Request) {
 		Unauthorized(w)
 		return
 	}
-	fmt.Println(email)
+	var req MkdirRequest
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.Info("could not decode request body")
+		BadRequest(w)
+		return
+	}
+	userHome := GetUserDir(email)
+	if userHome == "" {
+		slog.Error("something went wrong while getting user directory")
+		InternalServerError(w)
+		return
+	}
+	if req.DirName[0] != '/' {
+		userHome += "/"
+	}
+	if err = os.MkdirAll(fmt.Sprintf("%s%s", userHome, req.DirName), 0755); err != nil {
+		slog.Error("could not mkdir", "error", err)
+		InternalServerError(w)
+		return
+	}
+	resObj := map[string]any{
+		"message": "OK",
+		"status":  200,
+	}
+	WriteJSON(w, resObj)
 }
 
 func deleteHandler(w http.ResponseWriter, r *http.Request) {
