@@ -39,6 +39,10 @@ type MkdirCommand struct {
 	DirName string
 }
 
+type RemoveCommand struct {
+	FileName string
+}
+
 var (
 	red      = color.RGB(255, 0, 0)
 	green    = color.RGB(0, 255, 0)
@@ -120,6 +124,14 @@ func GenerateCommand(args []string) Command {
 		}
 		return &MkdirCommand{
 			DirName: args[1],
+		}
+	case "remove":
+		if len(args) != 2 {
+			fmt.Printf("Usage: fileport %s <file>\n", args[0])
+			return nil
+		}
+		return &RemoveCommand{
+			FileName: args[1],
 		}
 	default:
 		fmt.Println("fileport: Invalid argument")

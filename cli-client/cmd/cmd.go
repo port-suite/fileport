@@ -332,3 +332,7 @@ func (c *MkdirCommand) Execute() {
 	}
 	green.Printf("Created directory: %s\n", c.DirName)
 }
+
+func (c *RemoveCommand) Execute() {
+	fmt.Println("Remove command")
+}
