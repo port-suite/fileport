@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"os"
 	"strings"
 
@@ -215,7 +217,41 @@ func (c *RegisterCommand) Execute() {
 	green.Printf("You are now logged in as '%s %s'\n", name, surname)
 }
 
+func isAuthorized() bool {
+	ip, err := fs.GetCofigIP()
+	if err != nil {
+		return false
+	}
+	auth, err := fs.GetLocalAuth()
+	if err != nil {
+		return false
+	}
+	reqObj, err := json.Marshal(map[string]string{
+		"email":      auth.Email,
+		"auth_token": auth.AuthToken,
+	})
+	if err != nil {
+		return false
+	}
+	request, err := http.NewRequest("POST", fmt.Sprintf("http://%s:8000/valid", ip), bytes.NewBuffer(reqObj))
+	if err != nil {
+		return false
+	}
+	request.Header.Add("Content-Type", "application/json")
+	response, err := fpNet.Client.Do(request)
+	if err != nil {
+		return false
+	}
+	if response.StatusCode != 200 {
+		return false
+	}
+	return true
+}
+
 func (c *ListCommand) Execute() {
+	if !isAuthorized() {
+		return
+	}
 	dir, err := fpNet.GetFilesList(c.Path, c.Recursive)
 	if err != nil {
 		red.Println("Something went wrong")
@@ -230,6 +266,9 @@ func (c *ListCommand) Execute() {
 }
 
 func (c *GetCommand) Execute() {
+	if !isAuthorized() {
+		return
+	}
 	response, err := fpNet.GetFile(c.Path)
 	if err != nil {
 		red.Println("Something went wrong")
@@ -266,6 +305,9 @@ func (c *GetCommand) Execute() {
 }
 
 func (c *UploadCommand) Execute() {
+	if !isAuthorized() {
+		return
+	}
 	curDir, err := os.Getwd()
 	if err != nil {
 		red.Println("Something went wrong")
@@ -321,6 +363,9 @@ func (c *UploadCommand) Execute() {
 }
 
 func (c *MkdirCommand) Execute() {
+	if !isAuthorized() {
+		return
+	}
 	if err := fpNet.Mkdir(c.DirName); err != nil {
 		status, ok := errors.AsType[*fpNet.StatusNotOK](err)
 		if !ok {
@@ -334,6 +379,9 @@ func (c *MkdirCommand) Execute() {
 }
 
 func (c *RemoveCommand) Execute() {
+	if !isAuthorized() {
+		return
+	}
 	if err := fpNet.Remove(c.FileName); err != nil {
 		status, ok := errors.AsType[*fpNet.StatusNotOK](err)
 		if !ok {
@@ -344,4 +392,24 @@ func (c *RemoveCommand) Execute() {
 		return
 	}
 	green.Printf("Deleted file: %s\n", c.FileName)
+}
+
+func (c *RmdirCommand) Execute() {
+	if !isAuthorized() {
+		return
+	}
+	if err := fpNet.Rmdir(c.DirName); err != nil {
+		status, ok := errors.AsType[*fpNet.StatusNotOK](err)
+		if !ok {
+			red.Println("Something went wrong")
+			return
+		}
+		fmt.Printf("Status was: %d\n", status.StatusCode)
+		return
+	}
+	green.Printf("Deleted directory: %s\n", c.DirName)
+}
+
+func (c *VersionCommand) Execute() {
+	fmt.Println("fileport version v0.1.0")
 }

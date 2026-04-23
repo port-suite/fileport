@@ -27,7 +27,7 @@ func GetFilesList(path string, recursive bool) (fs.Inode, error) {
 	if recursive {
 		requset.Header.Set("recursive", "true")
 	}
-	response, err := client.Do(requset)
+	response, err := Client.Do(requset)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func GetFile(path string) (*GetFileResponse, error) {
 		return nil, err
 	}
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth.AuthToken))
-	response, err := client.Do(request)
+	response, err := Client.Do(request)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func UploadFile(fileName, destPath string) (*UploadFileResponse, error) {
 	}
 	request.Header.Add("Content-Type", "application/json")
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth.AuthToken))
-	response, err := client.Do(request)
+	response, err := Client.Do(request)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func Mkdir(dirName string) error {
 		return err
 	}
 	AddHeadersJSON(request, auth.AuthToken)
-	response, err := client.Do(request)
+	response, err := Client.Do(request)
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,37 @@ func Remove(fileName string) error {
 		return err
 	}
 	AddHeadersJSON(request, auth.AuthToken)
-	response, err := client.Do(request)
+	response, err := Client.Do(request)
+	if err != nil {
+		return err
+	}
+	if ResponseCode(response.StatusCode) != OK {
+		return &StatusNotOK{response.StatusCode}
+	}
+	return nil
+}
+
+func Rmdir(dirName string) error {
+	ip, err := fs.GetCofigIP()
+	if err != nil {
+		return err
+	}
+	reqBody, err := json.Marshal(map[string]string{
+		"dir_name": dirName,
+	})
+	if err != nil {
+		return err
+	}
+	request, err := http.NewRequest("DELETE", fmt.Sprintf("http://%s:8001/files/rmdir", ip), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+	auth, err := fs.GetLocalAuth()
+	if err != nil {
+		return err
+	}
+	AddHeadersJSON(request, auth.AuthToken)
+	response, err := Client.Do(request)
 	if err != nil {
 		return err
 	}

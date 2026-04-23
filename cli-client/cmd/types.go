@@ -43,6 +43,12 @@ type RemoveCommand struct {
 	FileName string
 }
 
+type RmdirCommand struct {
+	DirName string
+}
+
+type VersionCommand struct{}
+
 var (
 	red      = color.RGB(255, 0, 0)
 	green    = color.RGB(0, 255, 0)
@@ -133,6 +139,16 @@ func GenerateCommand(args []string) Command {
 		return &RemoveCommand{
 			FileName: args[1],
 		}
+	case "rmdir":
+		if len(args) != 2 {
+			fmt.Printf("Usage: fileport %s <dir>\n", args[0])
+			return nil
+		}
+		return &RmdirCommand{
+			DirName: args[1],
+		}
+	case "version":
+		return &VersionCommand{}
 	default:
 		fmt.Println("fileport: Invalid argument")
 		return nil

@@ -1,13 +1,18 @@
 package net
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
 )
 
 var (
-	client = &http.Client{}
+	Client = &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
 )
 
 type ValidateTokenReq struct {

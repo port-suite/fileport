@@ -19,7 +19,7 @@ func AuthServiceIsUp() (bool, error) {
 		return false, err
 	}
 	healthCheck, err := http.NewRequest("GET", fmt.Sprintf("http://%s:8000/health", ip), &bytes.Buffer{})
-	healthRes, err := client.Do(healthCheck)
+	healthRes, err := Client.Do(healthCheck)
 	if err != nil || healthRes.StatusCode != 200 {
 		return false, nil
 	}
@@ -41,7 +41,7 @@ func ValidateUserToken(email, token string) (ResponseCode, error) {
 	}
 	validTokenReq, err := http.NewRequest("POST", fmt.Sprintf("http://%s:8000/valid", ip), bytes.NewBuffer(reqBody))
 	validTokenReq.Header.Set("Content-Type", "application/json")
-	res, err := client.Do(validTokenReq)
+	res, err := Client.Do(validTokenReq)
 	if err != nil {
 		return Nil, err
 	}
@@ -68,7 +68,7 @@ func Login(email, password string) (*LoginResponse, error) {
 		return nil, err
 	}
 	loginReq.Header.Set("Content-Type", "application/json")
-	res, err := client.Do(loginReq)
+	res, err := Client.Do(loginReq)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func SignOut(email string) (ResponseCode, error) {
 		return Nil, err
 	}
 	signOutReq.Header.Set("Content-Type", "application/json")
-	response, err := client.Do(signOutReq)
+	response, err := Client.Do(signOutReq)
 	if err != nil {
 		return Nil, err
 	}
@@ -128,7 +128,7 @@ func RegisterUser(email, name, surname, password string) (ResponseCode, error) {
 		return Nil, err
 	}
 	registerReq.Header.Set("Content-Type", "application/json")
-	res, err := client.Do(registerReq)
+	res, err := Client.Do(registerReq)
 	if err != nil {
 		return Nil, err
 	}
