@@ -104,3 +104,7 @@ type StatusNotOK struct {
 func (e *StatusNotOK) Error() string {
 	return fmt.Sprintf("Status code %d", e.StatusCode)
 }
+
+type RemoveRequest struct {
+	FileName string `json:"file_name"`
+}

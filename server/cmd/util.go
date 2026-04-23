@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"net/http"
 	"os"
 )
@@ -52,6 +53,10 @@ func GetUserDir(email string) string {
 		}
 	}
 	return path
+}
+
+func GeneratePort() int {
+	return 8000 + rand.Intn(1000-100) + 100
 }
 
 /* --- CUSTOM ERRORS --- */

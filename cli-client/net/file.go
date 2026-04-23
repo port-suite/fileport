@@ -140,3 +140,30 @@ func Mkdir(dirName string) error {
 	}
 	return nil
 }
+
+func Remove(fileName string) error {
+	ip, err := fs.GetCofigIP()
+	if err != nil {
+		return err
+	}
+	reqBody, err := json.Marshal(&RemoveRequest{
+		FileName: fileName,
+	})
+	request, err := http.NewRequest("DELETE", fmt.Sprintf("http://%s:8001/files/delete", ip), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+	auth, err := fs.GetLocalAuth()
+	if err != nil {
+		return err
+	}
+	AddHeadersJSON(request, auth.AuthToken)
+	response, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+	if ResponseCode(response.StatusCode) != OK {
+		return &StatusNotOK{response.StatusCode}
+	}
+	return nil
+}

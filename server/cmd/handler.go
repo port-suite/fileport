@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -82,7 +83,7 @@ func getFileHandler(w http.ResponseWriter, r *http.Request) {
 		NotFound(w)
 		return
 	}
-	portNum := 8000 + rand.Intn(1000-100) + 100
+	portNum := GeneratePort()
 	response := &GetFileResponse{
 		ResponseCode: 200,
 		PortNumber:   portNum,
@@ -280,19 +281,87 @@ func moveHandler(w http.ResponseWriter, r *http.Request) {
 		Unauthorized(w)
 		return
 	}
-	_ = GetUserDir(email)
+	userHome := GetUserDir(email)
 	var req MoveRequest
 	err = json.NewDecoder(r.Body).Decode(&req)
-	// FIXME: See if req.Destination already exist
-	// FIXME: if not:
-	// FIXME:    move req.Target to req.Destination
-	// FIXME:    proceed as usual
-	// FIXME: else:
-	// FIXME:    send 303 See Other response with approrpiate message
-	// FIXME:    send Port for TCP socket
-	// FIXME:    Open TCP socket for listening
-	// FIXME:    Read 1 byte
-	// FIXME:    Complete action depenting on the read byte
-	// FIXME:    send confirmation over socket
-	// FIXME:    close socket
+	if req.Target[0] != '/' {
+		req.Target = "/" + req.Target
+	}
+	if req.Destination[0] != '/' {
+		req.Destination = "/" + req.Destination
+	}
+	_, err = os.Stat(userHome + req.Target)
+	if os.IsNotExist(err) {
+		WriteCustom(w, 304, fmt.Sprintf("'%s' target does not exist", req.Target[1:]))
+		slog.Info("target does not exist", "target", req.Target[1:])
+		return
+	}
+	_, err = os.Stat(userHome + req.Destination)
+	if os.IsNotExist(err) {
+		// File/Dir does not exist
+		if err = os.Rename(userHome+req.Target, userHome+req.Destination); err != nil {
+			InternalServerError(w)
+			slog.Error("something went wrong", "error", err)
+			return
+		}
+		WriteJSON(w, map[string]any{
+			"status":  200,
+			"message": "OK",
+		})
+		return
+	}
+	portNum := GeneratePort()
+	needsIntervensionRes := map[string]any{
+		"message":  "Intervension needed",
+		"status":   303,
+		"port_num": portNum,
+	}
+	w.WriteHeader(303)
+	json.NewEncoder(w).Encode(needsIntervensionRes)
+
+	respch := make(chan string)
+	go StartIntervensionServer(portNum, respch)
+
+	intervResp := <-respch
+	fmt.Println(intervResp)
+	if strings.ToLower(intervResp) == "n" {
+		respch <- string(DONE)
+		return
+	} else if strings.ToLower(intervResp) != "y" {
+		respch <- string(INVALID_RESPONSE)
+		return
+	}
+	if err = os.Rename(userHome+req.Target, userHome+req.Destination); err != nil {
+		slog.Error("something went wrong", "error", err)
+		respch <- string(FAILED)
+		return
+	}
+	respch <- string(DONE)
+}
+
+func StartIntervensionServer(portNum int, respch chan string) {
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", portNum))
+	if err != nil {
+		return
+	}
+	conn, err := listener.Accept()
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+	respByte := make([]byte, 1)
+	_, err = conn.Read(respByte)
+	if err != nil {
+		return
+	}
+	respch <- string(respByte)
+	actionDone := <-respch
+	fmt.Println(actionDone)
+	if ChanAction(actionDone) == DONE {
+		conn.Write([]byte("OK"))
+	} else if ChanAction(actionDone) == FAILED {
+		conn.Write([]byte("FAILED"))
+	} else if ChanAction(actionDone) == INVALID_RESPONSE {
+		conn.Write([]byte("INVALID RESPONSE"))
+	}
 }

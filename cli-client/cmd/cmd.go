@@ -334,5 +334,14 @@ func (c *MkdirCommand) Execute() {
 }
 
 func (c *RemoveCommand) Execute() {
-	fmt.Println("Remove command")
+	if err := fpNet.Remove(c.FileName); err != nil {
+		status, ok := errors.AsType[*fpNet.StatusNotOK](err)
+		if !ok {
+			red.Println("Something went wrong")
+			return
+		}
+		fmt.Printf("Status was: %d\n", status.StatusCode)
+		return
+	}
+	green.Printf("Deleted file: %s\n", c.FileName)
 }

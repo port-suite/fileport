@@ -79,3 +79,11 @@ type MoveRequest struct {
 	Target      string `json:"target"`
 	Destination string `json:"destination"`
 }
+
+type ChanAction string
+
+const (
+	DONE             ChanAction = "done"
+	FAILED           ChanAction = "failed"
+	INVALID_RESPONSE ChanAction = "invalid response"
+)
