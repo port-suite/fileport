@@ -113,3 +113,23 @@ func (e *StatusNotOK) Error() string {
 type RemoveRequest struct {
 	FileName string `json:"file_name"`
 }
+
+type MoveRequest struct {
+	Target      string `json:"target"`
+	Destination string `json:"destination"`
+}
+
+type IntervensionResponse struct {
+	Status  int    `json:"status"`
+	Message string `json:"message"`
+	PortNum int    `json:"port_num"`
+}
+
+type IntervensionResultError struct {
+	IntervensionResult string
+	PerformedMove      bool
+}
+
+func (e *IntervensionResultError) Error() string {
+	return "Intervension result error"
+}

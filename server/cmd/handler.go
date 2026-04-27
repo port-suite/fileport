@@ -318,7 +318,8 @@ func moveHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(303)
 	json.NewEncoder(w).Encode(needsIntervensionRes)
-
+	rc := http.NewResponseController(w)
+	rc.Flush()
 	respch := make(chan string)
 	go StartIntervensionServer(portNum, respch)
 
@@ -340,6 +341,7 @@ func moveHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func StartIntervensionServer(portNum int, respch chan string) {
+	slog.Info("starting intervension server on", "port", portNum)
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", portNum))
 	if err != nil {
 		return
@@ -354,14 +356,14 @@ func StartIntervensionServer(portNum int, respch chan string) {
 	if err != nil {
 		return
 	}
+	slog.Info("read byte", "byte", string(respByte))
 	respch <- string(respByte)
 	actionDone := <-respch
-	fmt.Println(actionDone)
 	if ChanAction(actionDone) == DONE {
-		conn.Write([]byte("OK"))
+		conn.Write([]byte("OK\n"))
 	} else if ChanAction(actionDone) == FAILED {
-		conn.Write([]byte("FAILED"))
+		conn.Write([]byte("FAILED\n"))
 	} else if ChanAction(actionDone) == INVALID_RESPONSE {
-		conn.Write([]byte("INVALID RESPONSE"))
+		conn.Write([]byte("INVALID RESPONSE\n"))
 	}
 }

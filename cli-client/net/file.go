@@ -1,10 +1,13 @@
 package net
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
+	"strings"
 
 	"github.com/Airbag65/fileport/cli-client/fs"
 )
@@ -196,4 +199,69 @@ func Rmdir(dirName string) error {
 		return &StatusNotOK{response.StatusCode}
 	}
 	return nil
+}
+
+func Move(target, destination string) error {
+	ip, err := fs.GetCofigIP()
+	if err != nil {
+		return err
+	}
+	reqBody, err := json.Marshal(&MoveRequest{
+		Target:      target,
+		Destination: destination,
+	})
+	if err != nil {
+		return err
+	}
+	request, err := http.NewRequest("PUT", fmt.Sprintf("http://%s:8001/files/move", ip), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+	auth, err := fs.GetLocalAuth()
+	if err != nil {
+		return err
+	}
+	AddHeadersJSON(request, auth.AuthToken)
+	response, err := Client.Do(request)
+	if err != nil {
+		return err
+	}
+	if response.StatusCode == 200 {
+		return nil
+	}
+	if response.StatusCode != 303 {
+		return &StatusNotOK{response.StatusCode}
+	}
+	var resBody IntervensionResponse
+	if err = json.NewDecoder(response.Body).Decode(&resBody); err != nil {
+		return err
+	}
+	fmt.Printf("'%s' already exists\n", destination)
+	fmt.Printf("Do you want to override '%s' with the content of '%s'? [Y/n] ", destination, target)
+	confirmation := "y"
+	fmt.Scanln(&confirmation)
+	confirmation = strings.ToLower(confirmation)
+	if strings.ToLower(confirmation) != "y" {
+		confirmation = "n"
+	}
+	conn, err := net.Dial("tcp", fmt.Sprintf(":%d", resBody.PortNum))
+	conn.Write([]byte(confirmation))
+	tcpRes, err := bufio.NewReader(conn).ReadBytes('\n')
+	if err != nil {
+		return err
+	}
+	if tcpRes[len(tcpRes)-1] == 0x0a {
+		tcpRes = tcpRes[:len(tcpRes)-1]
+	}
+	conn.Close()
+	var moveDone bool
+	if confirmation == "y" {
+		moveDone = true
+	} else {
+		moveDone = false
+	}
+	return &IntervensionResultError{
+		IntervensionResult: string(tcpRes),
+		PerformedMove:      moveDone,
+	}
 }

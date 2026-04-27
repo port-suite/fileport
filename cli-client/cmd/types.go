@@ -47,6 +47,11 @@ type RmdirCommand struct {
 	DirName string
 }
 
+type MoveCommand struct {
+	Target      string
+	Destination string
+}
+
 type VersionCommand struct{}
 
 var (
@@ -149,6 +154,15 @@ func GenerateCommand(args []string) Command {
 		}
 	case "version":
 		return &VersionCommand{}
+	case "move":
+		if len(args) != 3 {
+			fmt.Printf("Usage: fileport %s <target-file> <destination>\n", args[0])
+			return nil
+		}
+		return &MoveCommand{
+			Target:      args[1],
+			Destination: args[2],
+		}
 	default:
 		fmt.Println("fileport: Invalid argument")
 		return nil

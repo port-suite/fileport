@@ -411,5 +411,34 @@ func (c *RmdirCommand) Execute() {
 }
 
 func (c *VersionCommand) Execute() {
-	fmt.Println("fileport version v0.1.0")
+	fmt.Println("fileport version v0.1.1")
+}
+
+func (c *MoveCommand) Execute() {
+	if !isAuthorized() {
+		return
+	}
+	if err := fpNet.Move(c.Target, c.Destination); err != nil {
+		intervensionRes, ok := errors.AsType[*fpNet.IntervensionResultError](err)
+		if ok {
+			if intervensionRes.IntervensionResult != "OK" {
+				red.Println("Something went wrong")
+				return
+			}
+			if intervensionRes.PerformedMove {
+				goto NoErr
+			} else {
+				green.Println("No move executed")
+				return
+			}
+		}
+		status, ok := errors.AsType[*fpNet.StatusNotOK](err)
+		if !ok {
+			red.Println("Something went wrong")
+			return
+		}
+		fmt.Printf("Status was: %d\n", status.StatusCode)
+	}
+NoErr:
+	green.Printf("Moved '%s' to '%s'\n", c.Target, c.Destination)
 }
