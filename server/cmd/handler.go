@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+
 	"log/slog"
 	"math/rand"
 	"net"
@@ -282,7 +284,7 @@ func moveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	userHome := GetUserDir(email)
-	var req MoveRequest
+	var req MoveOrCopyRequest
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if req.Target[0] != '/' {
 		req.Target = "/" + req.Target
@@ -366,4 +368,129 @@ func StartIntervensionServer(portNum int, respch chan string) {
 	} else if ChanAction(actionDone) == INVALID_RESPONSE {
 		conn.Write([]byte("INVALID RESPONSE\n"))
 	}
+}
+
+func copyHandler(w http.ResponseWriter, r *http.Request) {
+	if !ensureJSON(w, r) {
+		slog.Info("bad requsest. Content-Type!=application/json")
+		return
+	}
+	email, err := verifyToken(r)
+	if err != nil {
+		slog.Info("not authorized")
+		Unauthorized(w)
+		return
+	}
+	userDir := GetUserDir(email)
+	var reqBody MoveOrCopyRequest
+	if err = json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		BadRequest(w)
+		return
+	}
+	var targetPath, destPath string
+	if reqBody.Target[0] != '/' {
+		targetPath = userDir + "/" + reqBody.Target
+	}
+	if reqBody.Destination[0] != '/' {
+		destPath = userDir + "/" + reqBody.Destination
+	}
+	targetStat, err := os.Stat(targetPath)
+	if os.IsNotExist(err) {
+		NotFound(w)
+		return
+	}
+	target, err := os.Open(targetPath)
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+	defer target.Close()
+	destStat, err := os.Stat(destPath)
+	if os.IsNotExist(err) {
+		dest, err := os.Create(destPath)
+		if err != nil {
+			InternalServerError(w)
+			return
+		}
+		defer dest.Close()
+		io.Copy(target, dest)
+		WriteJSON(w, "OK")
+		return
+	}
+	if destStat.IsDir() {
+		destPath += "/" + targetStat.Name()
+		dest, err := os.Create(destPath)
+		if err != nil {
+			InternalServerError(w)
+			return
+		}
+		defer dest.Close()
+		io.Copy(target, dest)
+		WriteJSON(w, "OK!")
+		return
+	}
+	portNum := GeneratePort()
+	needsIntervensionRes := map[string]any{
+		"message":  "Intervension needed",
+		"status":   303,
+		"port_num": portNum,
+	}
+	w.WriteHeader(303)
+	json.NewEncoder(w).Encode(needsIntervensionRes)
+	rc := http.NewResponseController(w)
+	rc.Flush()
+	respch := make(chan string)
+	go StartIntervensionServer(portNum, respch)
+
+	intervResp := <-respch
+	fmt.Println(intervResp)
+	if strings.ToLower(intervResp) == "n" {
+		respch <- string(DONE)
+		return
+	} else if strings.ToLower(intervResp) != "y" {
+		respch <- string(INVALID_RESPONSE)
+		return
+	}
+	if err = os.Truncate(destPath, 0); err != nil {
+		InternalServerError(w)
+		return
+	}
+	dest, err := os.Open(destPath)
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+	defer dest.Close()
+	io.Copy(target, dest)
+	respch <- string(DONE)
+}
+
+func catHandler(w http.ResponseWriter, r *http.Request) {
+	if !ensureJSON(w, r) {
+		slog.Info("bad requsest. Content-Type!=application/json")
+		return
+	}
+	email, err := verifyToken(r)
+	if err != nil {
+		slog.Info("not authorized")
+		Unauthorized(w)
+		return
+	}
+	userDir := GetUserDir(email)
+	fmt.Println(userDir)
+}
+
+func statHandler(w http.ResponseWriter, r *http.Request) {
+	if !ensureJSON(w, r) {
+		slog.Info("bad requsest. Content-Type!=application/json")
+		return
+	}
+	email, err := verifyToken(r)
+	if err != nil {
+		slog.Info("not authorized")
+		Unauthorized(w)
+		return
+	}
+	userDir := GetUserDir(email)
+	fmt.Println(userDir)
 }

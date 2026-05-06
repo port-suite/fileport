@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/Airbag65/fileport/cli-client/fs"
 	fpNet "github.com/Airbag65/fileport/cli-client/net"
@@ -24,6 +25,23 @@ func (c *HelpCommand) Execute() {
 		return
 	}
 	fpYellow.Println(title)
+	fmt.Println("Usage: fileport <command> [arguments]\nCOMMANDS:")
+	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
+	fmt.Fprintln(w, " status\tCheck login status")
+	fmt.Fprintln(w, " login\tLogin to the port suite")
+	fmt.Fprintln(w, " signout\tSign out from the port suite")
+	fmt.Fprintln(w, " register\tRegister a new account")
+	fmt.Fprintln(w, " list [-r|--recursive] [<directory>]\tList files stored in fileport")
+	fmt.Fprintln(w, " get <file-name>\tDownload a file from fileport")
+	fmt.Fprintln(w, " upload <source> <destination>\tUpload a source file to a destination in fileport")
+	fmt.Fprintln(w, " remove <target>\tDelete a target file from fileport")
+	fmt.Fprintln(w, " mkdir\tCreate a directory in fileport")
+	fmt.Fprintln(w, " rmdir\tRemove a directory in fileport")
+	fmt.Fprintln(w, " move\tMove or rename a file in fileport")
+	fmt.Fprintln(w, " \t")
+	fmt.Fprintln(w, " version\tDisplay the current fileport version")
+	fmt.Fprintln(w, " help\tList all possible commands and their usage")
+	w.Flush()
 }
 
 func (c *StatusCommand) Execute() {

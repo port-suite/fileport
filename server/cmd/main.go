@@ -16,10 +16,6 @@ func main() {
 		WriteJSON(w, "OK")
 	})
 
-	// NOTE: Not needed! Use AUTHPORT directly in client instead
-	// server.HandleFunc("POST /auth/login", loginHandler)
-	// server.HandleFunc("POST /auth/new", registerHandler)
-
 	server.HandleFunc("GET /files/list", listDirectoryHandler)
 	server.HandleFunc("GET /files/get", getFileHandler)
 	server.HandleFunc("POST /files/upload", uploadFileHandler)
@@ -27,6 +23,9 @@ func main() {
 	server.HandleFunc("DELETE /files/delete", deleteHandler)
 	server.HandleFunc("DELETE /files/rmdir", rmdirHandler)
 	server.HandleFunc("PUT /files/move", moveHandler)
+	server.HandleFunc("POST /files/copy", copyHandler)
+	server.HandleFunc("POST /files/cat", catHandler)
+	server.HandleFunc("OPTION /files/stat", statHandler)
 
 	handler := cors.Default().Handler(server)
 	fmt.Println("Listening on :8001")

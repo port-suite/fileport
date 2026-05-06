@@ -22,7 +22,15 @@ Type "fileport status"
 Sleep 500ms
 Enter
 
+Sleep 3s
+
 Type "fileport list -r"
+Sleep 500ms
+Enter
+
+Sleep 3s
+
+Type "ls"
 Sleep 500ms
 Enter
 
@@ -31,6 +39,8 @@ Sleep 3s
 Type "fileport get more-testing/demo.gif"
 Sleep 500ms
 Enter
+
+Sleep 3s
 
 Type "ls"
 Sleep 500ms

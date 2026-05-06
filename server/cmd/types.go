@@ -75,7 +75,7 @@ type RmdirRequest struct {
 	DirName string `json:"dir_name"`
 }
 
-type MoveRequest struct {
+type MoveOrCopyRequest struct {
 	Target      string `json:"target"`
 	Destination string `json:"destination"`
 }
