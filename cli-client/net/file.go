@@ -201,7 +201,14 @@ func Rmdir(dirName string) error {
 	return nil
 }
 
-func Move(target, destination string) error {
+type CopyOrMoveEnum string
+
+const (
+	MOVE_MODE CopyOrMoveEnum = "move"
+	COPY_MODE CopyOrMoveEnum = "copy"
+)
+
+func MoveOrCopy(target, destination string, mode CopyOrMoveEnum) error {
 	ip, err := fs.GetCofigIP()
 	if err != nil {
 		return err
@@ -213,7 +220,16 @@ func Move(target, destination string) error {
 	if err != nil {
 		return err
 	}
-	request, err := http.NewRequest("PUT", fmt.Sprintf("http://%s:8001/files/move", ip), bytes.NewBuffer(reqBody))
+	var method string
+	switch mode {
+	case MOVE_MODE:
+		method = "PUT"
+	case COPY_MODE:
+		method = "POST"
+	default:
+		return fmt.Errorf("Invalid mode")
+	}
+	request, err := http.NewRequest(method, fmt.Sprintf("http://%s:8001/files/%s", ip, string(mode)), bytes.NewBuffer(reqBody))
 	if err != nil {
 		return err
 	}
@@ -244,7 +260,7 @@ func Move(target, destination string) error {
 	if strings.ToLower(confirmation) != "y" {
 		confirmation = "n"
 	}
-	conn, err := net.Dial("tcp", fmt.Sprintf(":%d", resBody.PortNum))
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ip, resBody.PortNum))
 	conn.Write([]byte(confirmation))
 	tcpRes, err := bufio.NewReader(conn).ReadBytes('\n')
 	if err != nil {

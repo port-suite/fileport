@@ -54,17 +54,19 @@ type MoveCommand struct {
 
 type VersionCommand struct{}
 
+type CopyCommand struct {
+	Source      string
+	Destination string
+}
+
 var (
-	red      = color.RGB(255, 0, 0)
-	green    = color.RGB(0, 255, 0)
 	fpYellow = color.RGB(255, 249, 87)
-	yellow   = color.RGB(255, 255, 0)
 )
 
 func GenerateCommand(args []string) Command {
 	if len(args) < 1 {
 		fmt.Println("Usage: fileport <command>")
-		yellow.Println("Run 'fileport help' for further instructions")
+		color.Yellow("Run 'fileport help' for further instructions")
 		return nil
 	}
 	switch args[0] {
@@ -161,6 +163,15 @@ func GenerateCommand(args []string) Command {
 		}
 		return &MoveCommand{
 			Target:      args[1],
+			Destination: args[2],
+		}
+	case "copy":
+		if len(args) != 3 {
+			fmt.Printf("Usage: fileport %s <target-file> <destination>\n", args[0])
+			return nil
+		}
+		return &CopyCommand{
+			Source:      args[1],
 			Destination: args[2],
 		}
 	default:
