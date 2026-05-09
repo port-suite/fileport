@@ -3,17 +3,45 @@ package fs
 import (
 	"encoding/json"
 	"os"
+	"slices"
 
 	"github.com/BurntSushi/toml"
 )
 
 type Config struct {
 	Global Global `toml:"global"`
+	Alias  *Alias `toml:"alias"`
 }
 
 type Global struct {
 	IpAddr     string `toml:"ip_addr"`
 	SourcePath string `toml:"source_path"`
+}
+
+type AliasList []string
+
+type Alias struct {
+	Help     AliasList `toml:"help"`
+	Status   AliasList `toml:"status"`
+	Login    AliasList `toml:"login"`
+	SignOut  AliasList `toml:"signout"`
+	Register AliasList `toml:"register"`
+	List     AliasList `toml:"list"`
+	Get      AliasList `toml:"get"`
+	Upload   AliasList `toml:"upload"`
+	Mkdir    AliasList `toml:"mkdir"`
+	Remove   AliasList `toml:"remove"`
+	Rmdir    AliasList `toml:"rmdir"`
+	Move     AliasList `toml:"move"`
+	Version  AliasList `toml:"version"`
+	Alias    AliasList `toml:"alias"` // Implement alias command
+	Init     AliasList `toml:"init"`
+	Copy     AliasList `toml:"copy"`
+	Config   AliasList `toml:"config"`
+}
+
+func (al *AliasList) Contains(command string) bool {
+	return slices.Contains(*al, command)
 }
 
 func SaveConfiguration(config *Config) error {
@@ -22,7 +50,7 @@ func SaveConfiguration(config *Config) error {
 		return err
 	}
 	path := homeDir + "/.fileport/config.toml"
-	configFile, err := os.Open(path)
+	configFile, err := os.OpenFile(path, os.O_RDWR, 0644)
 	if err != nil {
 		return err
 	}
@@ -46,6 +74,39 @@ func GetConfiguration() (*Config, error) {
 	var config Config
 	_, err = toml.Decode(string(configFile), &config)
 	return &config, nil
+}
+
+func NewAlias() *Alias {
+	return &Alias{
+		Help:     []string{},
+		Status:   []string{},
+		Login:    []string{},
+		SignOut:  []string{},
+		Register: []string{},
+		List:     []string{},
+		Get:      []string{},
+		Upload:   []string{},
+		Mkdir:    []string{},
+		Remove:   []string{},
+		Rmdir:    []string{},
+		Move:     []string{},
+		Version:  []string{},
+		Alias:    []string{},
+		Init:     []string{},
+		Copy:     []string{},
+	}
+}
+
+func GetConfigAliases() (*Alias, error) {
+	config, err := GetConfiguration()
+	if err != nil {
+		return nil, err
+	}
+	if config.Alias == nil {
+		config.Alias = NewAlias()
+		SaveConfiguration(config)
+	}
+	return config.Alias, nil
 }
 
 func GetTitle() (string, error) {

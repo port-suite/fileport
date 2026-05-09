@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
 	"text/tabwriter"
 
@@ -41,9 +42,11 @@ func (c *HelpCommand) Execute() {
 	fmt.Fprintln(w, " rmdir <directory>\tRemove a directory in fileport")
 	fmt.Fprintln(w, " move <target> <destination>\tMove or rename a file in fileport")
 	fmt.Fprintln(w, " copy <source> <destination>\tCopy a source file in fileport to a destination")
+	fmt.Fprintln(w, " alias <command> <alias>\tAdd an alias for a command")
 	fmt.Fprintln(w, " \t")
 	fmt.Fprintln(w, " version\tDisplay the current fileport version")
 	fmt.Fprintln(w, " help\tList all possible commands and their usage")
+	fmt.Fprintln(w, " config\tEdit fileport configuration file")
 	w.Flush()
 }
 
@@ -447,7 +450,7 @@ func (c *RmdirCommand) Execute() {
 }
 
 func (c *VersionCommand) Execute() {
-	fmt.Println("fileport version v0.3.1")
+	fmt.Println("fileport version 0.5.0")
 }
 
 func (c *MoveCommand) Execute() {
@@ -526,4 +529,152 @@ func (c *InitCommand) Execute() {
 	fs.SaveConfiguration(config)
 	color.New(color.FgGreen).Print("Now using: ")
 	fmt.Println(newIp)
+}
+
+func (c *AliasCommans) Execute() {
+	config, err := fs.GetConfiguration()
+	if err != nil {
+		color.Red("Could not load configuration")
+		return
+	}
+	alreadyExists := false
+	switch c.Command {
+	case "help":
+		if config.Alias.Help.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Help = append(config.Alias.Help, c.Alias)
+	case "status":
+		if config.Alias.Status.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Status = append(config.Alias.Status, c.Alias)
+	case "login":
+		if config.Alias.Login.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Login = append(config.Alias.Login, c.Alias)
+	case "signout":
+		if config.Alias.SignOut.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.SignOut = append(config.Alias.SignOut, c.Alias)
+	case "register":
+		if config.Alias.Register.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Register = append(config.Alias.Register, c.Alias)
+	case "list":
+		if config.Alias.List.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.List = append(config.Alias.List, c.Alias)
+	case "get":
+		if config.Alias.Get.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Get = append(config.Alias.Get, c.Alias)
+	case "upload":
+		if config.Alias.Upload.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Upload = append(config.Alias.Upload, c.Alias)
+	case "mkdir":
+		if config.Alias.Mkdir.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Mkdir = append(config.Alias.Mkdir, c.Alias)
+	case "rmdir":
+		if config.Alias.Rmdir.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Rmdir = append(config.Alias.Rmdir, c.Alias)
+	case "remove":
+		if config.Alias.Remove.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Remove = append(config.Alias.Remove, c.Alias)
+	case "move":
+		if config.Alias.Move.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Move = append(config.Alias.Move, c.Alias)
+	case "copy":
+		if config.Alias.Copy.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Copy = append(config.Alias.Copy, c.Alias)
+	case "version":
+		if config.Alias.Version.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Version = append(config.Alias.Version, c.Alias)
+	case "alias":
+		if config.Alias.Alias.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Alias = append(config.Alias.Alias, c.Alias)
+	case "init":
+		if config.Alias.Init.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Init = append(config.Alias.Init, c.Alias)
+	case "config":
+		if config.Alias.Config.Contains(c.Alias) {
+			alreadyExists = true
+			goto NoNewAlias
+		}
+		config.Alias.Config = append(config.Alias.Config, c.Alias)
+	default:
+		color.Red("Command '%s' not found", c.Command)
+		return
+	}
+	err = fs.SaveConfiguration(config)
+	if err != nil {
+		color.Red("Could not save alias")
+		return
+	}
+NoNewAlias:
+	if alreadyExists {
+		fmt.Printf("Alias '%s' for '%s' already exists\n", c.Alias, c.Command)
+		return
+	}
+	fmt.Printf("Added alias '%s' for '%s'\n", c.Alias, c.Command)
+}
+
+func (c *ConfigCommand) Execute() {
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		editor = "nano"
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		color.Red("Something went wrong")
+		return
+	}
+	configPath := home + "/.fileport/config.toml"
+	cmd := exec.Command(editor, configPath)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err = cmd.Run(); err != nil {
+		color.Red("Something went wrong")
+		return
+	}
 }

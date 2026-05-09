@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/Airbag65/fileport/cli-client/fs"
 	"github.com/fatih/color"
 )
 
@@ -61,28 +62,41 @@ type CopyCommand struct {
 
 type InitCommand struct{}
 
+type AliasCommans struct {
+	Command string
+	Alias   string
+}
+
+type ConfigCommand struct{}
+
 var (
 	fpYellow = color.RGB(255, 249, 87)
 )
 
 func GenerateCommand(args []string) Command {
+	aliases, err := fs.GetConfigAliases()
+	if err != nil {
+		color.Red("Could not fetch aliases")
+		return nil
+	}
 	if len(args) < 1 {
 		fmt.Println("Usage: fileport <command>")
 		color.Yellow("Run 'fileport help' for further instructions")
 		return nil
 	}
-	switch args[0] {
-	case "help":
+	cmd := args[0]
+	switch {
+	case aliases.Help.Contains(cmd), cmd == "help":
 		return &HelpCommand{}
-	case "status":
+	case aliases.Status.Contains(cmd), cmd == "status":
 		return &StatusCommand{}
-	case "login":
+	case aliases.Login.Contains(cmd), cmd == "login":
 		return &LoginCommad{}
-	case "signout":
+	case aliases.SignOut.Contains(cmd), cmd == "signout":
 		return &SignOutCommand{}
-	case "register":
+	case aliases.Register.Contains(cmd), cmd == "register":
 		return &RegisterCommand{}
-	case "list":
+	case aliases.List.Contains(cmd), cmd == "list":
 		if len(args) > 3 {
 			fmt.Println("fileport: Invalid argument")
 			return nil
@@ -115,7 +129,7 @@ func GenerateCommand(args []string) Command {
 			Recursive: rec,
 			Path:      path,
 		}
-	case "get":
+	case aliases.Get.Contains(cmd), cmd == "get":
 		if len(args) != 2 {
 			fmt.Printf("Usage: fileport %s <file-name>\n", args[0])
 			return nil
@@ -123,7 +137,7 @@ func GenerateCommand(args []string) Command {
 		return &GetCommand{
 			Path: args[1],
 		}
-	case "upload":
+	case aliases.Upload.Contains(cmd), cmd == "upload":
 		if len(args) != 3 {
 			fmt.Printf("Usage: fileport %s <file> <destination-path>\n", args[0])
 			return nil
@@ -132,7 +146,7 @@ func GenerateCommand(args []string) Command {
 			FileName:        args[1],
 			DestinationPath: args[2],
 		}
-	case "mkdir":
+	case aliases.Mkdir.Contains(cmd), cmd == "mkdir":
 		if len(args) != 2 {
 			fmt.Printf("Usage: fileport %s <directory-name>\n", args[0])
 			return nil
@@ -140,7 +154,7 @@ func GenerateCommand(args []string) Command {
 		return &MkdirCommand{
 			DirName: args[1],
 		}
-	case "remove":
+	case aliases.Remove.Contains(cmd), cmd == "remove":
 		if len(args) != 2 {
 			fmt.Printf("Usage: fileport %s <file>\n", args[0])
 			return nil
@@ -148,7 +162,7 @@ func GenerateCommand(args []string) Command {
 		return &RemoveCommand{
 			FileName: args[1],
 		}
-	case "rmdir":
+	case aliases.Rmdir.Contains(cmd), cmd == "rmdir":
 		if len(args) != 2 {
 			fmt.Printf("Usage: fileport %s <dir>\n", args[0])
 			return nil
@@ -156,9 +170,9 @@ func GenerateCommand(args []string) Command {
 		return &RmdirCommand{
 			DirName: args[1],
 		}
-	case "version":
+	case aliases.Version.Contains(cmd), cmd == "version":
 		return &VersionCommand{}
-	case "move":
+	case cmd == "move":
 		if len(args) != 3 {
 			fmt.Printf("Usage: fileport %s <target-file> <destination>\n", args[0])
 			return nil
@@ -167,7 +181,7 @@ func GenerateCommand(args []string) Command {
 			Target:      args[1],
 			Destination: args[2],
 		}
-	case "copy":
+	case aliases.Copy.Contains(cmd), cmd == "copy":
 		if len(args) != 3 {
 			fmt.Printf("Usage: fileport %s <target-file> <destination>\n", args[0])
 			return nil
@@ -176,8 +190,19 @@ func GenerateCommand(args []string) Command {
 			Source:      args[1],
 			Destination: args[2],
 		}
-	case "init":
+	case aliases.Init.Contains(cmd), cmd == "init":
 		return &InitCommand{}
+	case aliases.Alias.Contains(cmd), cmd == "alias":
+		if len(args) != 3 {
+			fmt.Printf("Usage: fileport %s <command> <alias>\n", args[0])
+			return nil
+		}
+		return &AliasCommans{
+			Command: args[1],
+			Alias:   args[2],
+		}
+	case aliases.Config.Contains(cmd), cmd == "config":
+		return &ConfigCommand{}
 	default:
 		fmt.Println("fileport: Invalid argument")
 		return nil
