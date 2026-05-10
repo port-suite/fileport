@@ -46,6 +46,7 @@ func (c *HelpCommand) Execute() {
 	fmt.Fprintln(w, " \t")
 	fmt.Fprintln(w, " version\tDisplay the current fileport version")
 	fmt.Fprintln(w, " help\tList all possible commands and their usage")
+	fmt.Fprintln(w, " view\tView aliases for all commands")
 	fmt.Fprintln(w, " config\tEdit fileport configuration file")
 	w.Flush()
 }
@@ -450,7 +451,7 @@ func (c *RmdirCommand) Execute() {
 }
 
 func (c *VersionCommand) Execute() {
-	fmt.Println("fileport version 0.5.0")
+	fmt.Println("fileport version 0.6.0")
 }
 
 func (c *MoveCommand) Execute() {
@@ -677,4 +678,34 @@ func (c *ConfigCommand) Execute() {
 		color.Red("Something went wrong")
 		return
 	}
+}
+
+func (c *ViewCommand) Execute() {
+	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
+	alias, err := fs.GetConfigAliases()
+	if err != nil {
+		color.Red("Could not load aliases")
+		return
+	}
+	fmt.Fprintln(w, "COMMAND\t\tALIAS")
+	fmt.Fprintln(w, " \t\t ")
+	fmt.Fprintf(w, "help:\t\t%s\n", alias.Help.ToString())
+	fmt.Fprintf(w, "status:\t\t%s\n", alias.Status.ToString())
+	fmt.Fprintf(w, "login:\t\t%s\n", alias.Login.ToString())
+	fmt.Fprintf(w, "signout:\t\t%s\n", alias.SignOut.ToString())
+	fmt.Fprintf(w, "register:\t\t%s\n", alias.Register.ToString())
+	fmt.Fprintf(w, "list:\t\t%s\n", alias.List.ToString())
+	fmt.Fprintf(w, "get:\t\t%s\n", alias.Get.ToString())
+	fmt.Fprintf(w, "upload:\t\t%s\n", alias.Upload.ToString())
+	fmt.Fprintf(w, "mkdir:\t\t%s\n", alias.Mkdir.ToString())
+	fmt.Fprintf(w, "rmdir:\t\t%s\n", alias.Rmdir.ToString())
+	fmt.Fprintf(w, "remove:\t\t%s\n", alias.Remove.ToString())
+	fmt.Fprintf(w, "move:\t\t%s\n", alias.Move.ToString())
+	fmt.Fprintf(w, "copy:\t\t%s\n", alias.Copy.ToString())
+	fmt.Fprintf(w, "version:\t\t%s\n", alias.Version.ToString())
+	fmt.Fprintf(w, "alias:\t\t%s\n", alias.Alias.ToString())
+	fmt.Fprintf(w, "init:\t\t%s\n", alias.Init.ToString())
+	fmt.Fprintf(w, "config:\t\t%s\n", alias.Config.ToString())
+
+	w.Flush()
 }

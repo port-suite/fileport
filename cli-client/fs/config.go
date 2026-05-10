@@ -34,14 +34,26 @@ type Alias struct {
 	Rmdir    AliasList `toml:"rmdir"`
 	Move     AliasList `toml:"move"`
 	Version  AliasList `toml:"version"`
-	Alias    AliasList `toml:"alias"` // Implement alias command
+	Alias    AliasList `toml:"alias"`
 	Init     AliasList `toml:"init"`
 	Copy     AliasList `toml:"copy"`
 	Config   AliasList `toml:"config"`
+	View     AliasList `toml:"view"`
 }
 
 func (al *AliasList) Contains(command string) bool {
 	return slices.Contains(*al, command)
+}
+
+func (al *AliasList) ToString() string {
+	if len(*al) == 0 {
+		return ""
+	}
+	res := ""
+	for _, el := range *al {
+		res = res + el + ", "
+	}
+	return res[:len(res)-2]
 }
 
 func SaveConfiguration(config *Config) error {
@@ -78,22 +90,24 @@ func GetConfiguration() (*Config, error) {
 
 func NewAlias() *Alias {
 	return &Alias{
-		Help:     []string{},
-		Status:   []string{},
-		Login:    []string{},
-		SignOut:  []string{},
-		Register: []string{},
-		List:     []string{},
-		Get:      []string{},
-		Upload:   []string{},
-		Mkdir:    []string{},
-		Remove:   []string{},
-		Rmdir:    []string{},
-		Move:     []string{},
-		Version:  []string{},
-		Alias:    []string{},
-		Init:     []string{},
-		Copy:     []string{},
+		Help:     AliasList{},
+		Status:   AliasList{},
+		Login:    AliasList{},
+		SignOut:  AliasList{},
+		Register: AliasList{},
+		List:     AliasList{},
+		Get:      AliasList{},
+		Upload:   AliasList{},
+		Mkdir:    AliasList{},
+		Remove:   AliasList{},
+		Rmdir:    AliasList{},
+		Move:     AliasList{},
+		Version:  AliasList{},
+		Alias:    AliasList{},
+		Init:     AliasList{},
+		Copy:     AliasList{},
+		Config:   AliasList{},
+		View:     AliasList{},
 	}
 }
 

@@ -69,6 +69,8 @@ type AliasCommans struct {
 
 type ConfigCommand struct{}
 
+type ViewCommand struct{}
+
 var (
 	fpYellow = color.RGB(255, 249, 87)
 )
@@ -203,6 +205,8 @@ func GenerateCommand(args []string) Command {
 		}
 	case aliases.Config.Contains(cmd), cmd == "config":
 		return &ConfigCommand{}
+	case aliases.View.Contains(cmd), cmd == "view":
+		return &ViewCommand{}
 	default:
 		fmt.Println("fileport: Invalid argument")
 		return nil
