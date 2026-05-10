@@ -39,6 +39,7 @@ type Alias struct {
 	Copy     AliasList `toml:"copy"`
 	Config   AliasList `toml:"config"`
 	View     AliasList `toml:"view"`
+	Stat     AliasList `toml:"stat"`
 }
 
 func (al *AliasList) Contains(command string) bool {
@@ -108,6 +109,7 @@ func NewAlias() *Alias {
 		Copy:     AliasList{},
 		Config:   AliasList{},
 		View:     AliasList{},
+		Stat:     AliasList{},
 	}
 }
 

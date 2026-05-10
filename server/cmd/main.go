@@ -24,7 +24,6 @@ func main() {
 	server.HandleFunc("DELETE /files/rmdir", rmdirHandler)
 	server.HandleFunc("PUT /files/move", moveHandler)
 	server.HandleFunc("POST /files/copy", copyHandler)
-	server.HandleFunc("POST /files/cat", catHandler)
 	server.HandleFunc("OPTION /files/stat", statHandler)
 
 	handler := cors.Default().Handler(server)

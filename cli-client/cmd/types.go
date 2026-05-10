@@ -71,6 +71,10 @@ type ConfigCommand struct{}
 
 type ViewCommand struct{}
 
+type StatCommand struct {
+	Target string
+}
+
 var (
 	fpYellow = color.RGB(255, 249, 87)
 )
@@ -207,6 +211,14 @@ func GenerateCommand(args []string) Command {
 		return &ConfigCommand{}
 	case aliases.View.Contains(cmd), cmd == "view":
 		return &ViewCommand{}
+	case aliases.Stat.Contains(cmd), cmd == "stat":
+		if len(args) != 2 {
+			fmt.Printf("Usage: fileport %s <target>\n", args[0])
+			return nil
+		}
+		return &StatCommand{
+			Target: args[1],
+		}
 	default:
 		fmt.Println("fileport: Invalid argument")
 		return nil

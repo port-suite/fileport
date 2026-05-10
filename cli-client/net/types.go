@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 )
 
 var (
@@ -132,4 +133,12 @@ type IntervensionResultError struct {
 
 func (e *IntervensionResultError) Error() string {
 	return "Intervension result error"
+}
+
+type FileStat struct {
+	Name       string    `json:"name"`
+	Size       int64     `json:"size"`
+	ModifiedAt time.Time `json:"modified_at"`
+	IsDir      bool      `json:"is_dir"`
+	FileType   string    `json:"file_type"`
 }

@@ -465,26 +465,7 @@ func copyHandler(w http.ResponseWriter, r *http.Request) {
 	respch <- string(DONE)
 }
 
-func catHandler(w http.ResponseWriter, r *http.Request) {
-	if !ensureJSON(w, r) {
-		slog.Info("bad requsest. Content-Type!=application/json")
-		return
-	}
-	email, err := verifyToken(r)
-	if err != nil {
-		slog.Info("not authorized")
-		Unauthorized(w)
-		return
-	}
-	userDir := GetUserDir(email)
-	fmt.Println(userDir)
-}
-
 func statHandler(w http.ResponseWriter, r *http.Request) {
-	if !ensureJSON(w, r) {
-		slog.Info("bad requsest. Content-Type!=application/json")
-		return
-	}
 	email, err := verifyToken(r)
 	if err != nil {
 		slog.Info("not authorized")
@@ -492,5 +473,36 @@ func statHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	userDir := GetUserDir(email)
-	fmt.Println(userDir)
+	target := r.Header.Get("Target-File")
+	if target == "" {
+		BadRequest(w)
+		return
+	}
+	if target[0] != '/' {
+		userDir += "/"
+	}
+	path := userDir + target
+	stat, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		NotFound(w)
+		return
+	}
+	if err != nil {
+		InternalServerError(w)
+		return
+	}
+	var t string
+	if stat.IsDir() {
+		t = "directory"
+	} else {
+		t = strings.Split(stat.Name(), ".")[len(strings.Split(stat.Name(), "."))-1]
+	}
+	resObj := &StatResponse{
+		Name:       stat.Name(),
+		Size:       stat.Size(),
+		ModifiedAt: stat.ModTime(),
+		IsDir:      stat.IsDir(),
+		FileType:   t,
+	}
+	WriteJSON(w, resObj)
 }

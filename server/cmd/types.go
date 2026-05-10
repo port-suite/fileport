@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 type LoginRequest struct {
 	Email            string `json:"email"`
 	Password         string `json:"password"`
@@ -78,6 +80,14 @@ type RmdirRequest struct {
 type MoveOrCopyRequest struct {
 	Target      string `json:"target"`
 	Destination string `json:"destination"`
+}
+
+type StatResponse struct {
+	Name       string    `json:"name"`
+	Size       int64     `json:"size"`
+	ModifiedAt time.Time `json:"modified_at"`
+	IsDir      bool      `json:"is_dir"`
+	FileType   string    `json:"file_type"`
 }
 
 type ChanAction string

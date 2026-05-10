@@ -260,7 +260,7 @@ func MoveOrCopy(target, destination string, mode CopyOrMoveEnum) error {
 	if strings.ToLower(confirmation) != "y" {
 		confirmation = "n"
 	}
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ip, resBody.PortNum))
+	conn, err := net.Dial("tcp", net.JoinHostPort(ip, fmt.Sprintf("%d", resBody.PortNum)))
 	conn.Write([]byte(confirmation))
 	tcpRes, err := bufio.NewReader(conn).ReadBytes('\n')
 	if err != nil {
@@ -280,4 +280,30 @@ func MoveOrCopy(target, destination string, mode CopyOrMoveEnum) error {
 		IntervensionResult: string(tcpRes),
 		PerformedMove:      moveDone,
 	}
+}
+
+func Stat(target string) (*FileStat, int) {
+	ip, err := fs.GetCofigIP()
+	if err != nil {
+		return nil, -1
+	}
+	request, err := http.NewRequest("OPTION", fmt.Sprintf("http://%s:8001/files/stat", ip), bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return nil, -1
+	}
+	auth, err := fs.GetLocalAuth()
+	if err != nil {
+		return nil, -1
+	}
+	AddHeader(request, auth.AuthToken)
+	request.Header.Add("Target-File", target)
+	response, err := Client.Do(request)
+	if response.StatusCode != 200 {
+		return nil, response.StatusCode
+	}
+	var stat FileStat
+	if err = json.NewDecoder(response.Body).Decode(&stat); err != nil {
+		return nil, -1
+	}
+	return &stat, response.StatusCode
 }

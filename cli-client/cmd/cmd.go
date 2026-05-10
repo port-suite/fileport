@@ -42,6 +42,7 @@ func (c *HelpCommand) Execute() {
 	fmt.Fprintln(w, " rmdir <directory>\tRemove a directory in fileport")
 	fmt.Fprintln(w, " move <target> <destination>\tMove or rename a file in fileport")
 	fmt.Fprintln(w, " copy <source> <destination>\tCopy a source file in fileport to a destination")
+	fmt.Fprintln(w, " stat <target>\tGet stats on a target file")
 	fmt.Fprintln(w, " alias <command> <alias>\tAdd an alias for a command")
 	fmt.Fprintln(w, " \t")
 	fmt.Fprintln(w, " version\tDisplay the current fileport version")
@@ -321,7 +322,7 @@ func (c *GetCommand) Execute() {
 		color.Red("Something went wrong")
 		return
 	}
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ip, response.PortNumber))
+	conn, err := net.Dial("tcp", net.JoinHostPort(ip, fmt.Sprintf("%d", response.PortNumber)))
 	buff := new(bytes.Buffer)
 	var (
 		size int64
@@ -388,7 +389,7 @@ func (c *UploadCommand) Execute() {
 		color.Red("Something went wrong")
 		return
 	}
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ip, response.PortNumber))
+	conn, err := net.Dial("tcp", net.JoinHostPort(ip, fmt.Sprintf("%d", response.PortNumber)))
 	if err != nil {
 		color.Red("Could not connect to file server")
 		return
@@ -451,7 +452,7 @@ func (c *RmdirCommand) Execute() {
 }
 
 func (c *VersionCommand) Execute() {
-	fmt.Println("fileport version 0.6.0")
+	fmt.Println("fileport version 1.0.0")
 }
 
 func (c *MoveCommand) Execute() {
@@ -702,10 +703,46 @@ func (c *ViewCommand) Execute() {
 	fmt.Fprintf(w, "remove:\t\t%s\n", alias.Remove.ToString())
 	fmt.Fprintf(w, "move:\t\t%s\n", alias.Move.ToString())
 	fmt.Fprintf(w, "copy:\t\t%s\n", alias.Copy.ToString())
+	fmt.Fprintf(w, "stat:\t\t%s\n", alias.Stat.ToString())
 	fmt.Fprintf(w, "version:\t\t%s\n", alias.Version.ToString())
 	fmt.Fprintf(w, "alias:\t\t%s\n", alias.Alias.ToString())
 	fmt.Fprintf(w, "init:\t\t%s\n", alias.Init.ToString())
 	fmt.Fprintf(w, "config:\t\t%s\n", alias.Config.ToString())
 
 	w.Flush()
+}
+
+func (c *StatCommand) Execute() {
+	if !isAuthorized() {
+		return
+	}
+	fileStat, status := fpNet.Stat(c.Target)
+	if status < 0 {
+		color.Red("Something went wrong")
+		return
+	}
+	if fileStat == nil {
+		switch status {
+		case 404:
+			color.Yellow("'%s' not found", c.Target)
+			return
+		case 500:
+			color.Red("Server error")
+			return
+		case 401:
+			color.Red("Unauthorized")
+			return
+		case 400:
+			color.Yellow("Something went wrong")
+			return
+		}
+	}
+	header := fmt.Sprintf("File stats on '%s'", c.Target)
+	fmt.Println(header)
+	fmt.Println(strings.Repeat("=", len(header)))
+	fmt.Printf("File name: %s\n", fileStat.Name)
+	fmt.Printf("File size: %d bytes\n", fileStat.Size)
+	fmt.Printf("Last modified at: %v\n", fileStat.ModifiedAt)
+	fmt.Printf("File type: %s\n", fileStat.FileType)
+	fmt.Printf("Is directory: %v\n", fileStat.IsDir)
 }
